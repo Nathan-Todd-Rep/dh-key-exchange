@@ -1,10 +1,11 @@
 #Nathan Todd
 #Program: test_math
-#Fixed mathematical tests for square-and-multiply exponentiation.
+#Fixed mathematical tests: exponentiation, factorization and generator checks.
 
 import unittest
 
 from modular_math import modular_exponentiation
+from parameters import find_generator, is_generator, prime_factors
 
 
 class TestModularExponentiation(unittest.TestCase):
@@ -50,6 +51,53 @@ class TestModularExponentiation(unittest.TestCase):
         for base in range(-30, 30):
             result = modular_exponentiation(base, 13, 29)
             self.assertTrue(0 <= result < 29)
+
+
+class TestFactorization(unittest.TestCase):
+    def test_one(self):
+        self.assertEqual(prime_factors(1), set())
+
+    def test_twenty_two(self):
+        self.assertEqual(prime_factors(22), {2, 11})
+
+    def test_repeated_factors(self):
+        self.assertEqual(prime_factors(65536), {2})
+        self.assertEqual(prime_factors(2 ** 3 * 3 ** 4 * 7), {2, 3, 7})
+
+    def test_large_prime_remainder(self):
+        self.assertEqual(prime_factors(2 * 2147483647), {2, 2147483647})
+
+    def test_rejects_invalid(self):
+        with self.assertRaises(ValueError):
+            prime_factors(0)
+        with self.assertRaises(TypeError):
+            prime_factors(22.0)
+        with self.assertRaises(TypeError):
+            prime_factors(True)
+
+
+class TestGenerator(unittest.TestCase):
+    def test_p23(self):
+        self.assertTrue(is_generator(5, 23))
+        self.assertFalse(is_generator(2, 23))
+
+    def test_p65537(self):
+        self.assertTrue(is_generator(3, 65537))
+
+    def test_out_of_range_candidates(self):
+        self.assertFalse(is_generator(1, 23))
+        self.assertFalse(is_generator(22, 23))
+
+    def test_find_generator(self):
+        self.assertEqual(find_generator(23), 5)
+        self.assertEqual(find_generator(65537), 3)
+
+    #A generator's powers must reach every nonzero residue.
+    def test_generator_has_full_order(self):
+        p = 23
+        g = find_generator(p)
+        powers = {modular_exponentiation(g, k, p) for k in range(1, p)}
+        self.assertEqual(powers, set(range(1, p)))
 
 
 if __name__ == "__main__":
